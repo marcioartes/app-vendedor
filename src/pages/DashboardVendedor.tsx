@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from '../contexts/AuthContext'
 import { useProspects } from '../hooks/useProspects'
 import Header from '../components/layout/Header'
 import FilterBar from '../components/layout/FilterBar'
@@ -13,7 +13,6 @@ export default function DashboardVendedor() {
   const { perfil, signOut } = useAuth()
   const [filters, setFilters] = useState<FilterState>({ status: 'todos', search: '' })
   const { prospects, loading, error, createProspect, updateProspect, updateStatus } = useProspects(filters)
-  const [allProspects, setAllProspects] = useState<Prospect[]>([])
   const { prospects: todosProspects } = useProspects({ status: 'todos', search: '' })
   const [showForm, setShowForm] = useState(false)
   const [editingProspect, setEditingProspect] = useState<Prospect | undefined>()

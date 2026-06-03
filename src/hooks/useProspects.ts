@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Prospect, Status, FilterState, ProspectInsert, ProspectUpdate } from '../types'
 import * as prospectService from '../services/prospects'
 
@@ -40,13 +40,21 @@ export function useProspects(filters: FilterState) {
   const [prospects, setProspects] = useState<Prospect[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const statusRef = useRef(filters.status)
+  const searchRef = useRef(filters.search)
 
   useEffect(() => {
+    statusRef.current = filters.status
+    searchRef.current = filters.search
+
     async function fetch() {
       try {
         setLoading(true)
         setError(null)
-        const data = await prospectService.getProspects(filters)
+        const data = await prospectService.getProspects({
+          status: statusRef.current,
+          search: searchRef.current,
+        })
         setProspects(ordenarProspects(data))
       } catch (err) {
         setError('Erro ao carregar prospectos')

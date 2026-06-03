@@ -8,10 +8,13 @@ interface ProspectCardProps {
   onStatusChange: (id: string, status: Status) => void
 }
 
-function getRetornoInfo(data: string) {
+function getRetornoInfo(prospect: Prospect) {
+  if (prospect.status !== 'aberto') return null
+
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
-  const retorno = new Date(data + 'T00:00:00')
+  const retorno = new Date(prospect.proximo_retorno + 'T00:00:00')
+
   if (retorno < hoje) return { label: 'Atrasado', color: 'text-red-500 bg-red-50' }
   if (retorno.getTime() === hoje.getTime()) return { label: 'Hoje', color: 'text-yellow-600 bg-yellow-50' }
   return { label: retorno.toLocaleDateString('pt-BR'), color: 'text-green-600 bg-green-50' }
@@ -30,7 +33,7 @@ const STATUS_OPTIONS: { value: Status; label: string }[] = [
 ]
 
 export default function ProspectCard({ prospect, onEdit, onStatusChange }: ProspectCardProps) {
-  const retorno = getRetornoInfo(prospect.proximo_retorno)
+  const retorno = getRetornoInfo(prospect)
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
@@ -60,10 +63,16 @@ export default function ProspectCard({ prospect, onEdit, onStatusChange }: Prosp
       <p className="text-sm text-gray-600 line-clamp-2">{prospect.resumo_orcamento}</p>
 
       <div className="flex items-center justify-between pt-1">
-        <span className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg ${retorno.color}`}>
-          <Calendar size={12} />
-          {retorno.label}
-        </span>
+        {retorno ? (
+          <span className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg ${retorno.color}`}>
+            <Calendar size={12} />
+            {retorno.label}
+          </span>
+        ) : (
+          <span className="text-xs text-gray-300">
+            {new Date(prospect.proximo_retorno + 'T00:00:00').toLocaleDateString('pt-BR')}
+          </span>
+        )}
 
         <select
           value={prospect.status}

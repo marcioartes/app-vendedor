@@ -1,9 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { signIn } from '../services/auth'
 
 export default function LoginPage() {
-  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,10 +13,9 @@ export default function LoginPage() {
       setLoading(true)
       setError(null)
       await signIn(email, password)
-      navigate('/')
+      window.location.href = '/dashboard'
     } catch {
       setError('Email ou senha incorretos')
-    } finally {
       setLoading(false)
     }
   }
