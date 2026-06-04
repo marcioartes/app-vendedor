@@ -7,13 +7,12 @@ import FilterBar from '../components/layout/FilterBar'
 import AlertaBanner from '../components/layout/AlertaBanner'
 import ProspectCard from '../components/prospects/ProspectCard'
 import ProspectForm from '../components/prospects/ProspectForm'
-import type { Prospect, Status, FilterState, ProspectInsert, ProspectUpdate } from '../types'
+import type { Prospect, FilterState, ProspectInsert, ProspectUpdate } from '../types'
 
 export default function DashboardVendedor() {
   const { perfil, signOut } = useAuth()
   const [filters, setFilters] = useState<FilterState>({ status: 'todos', search: '' })
   const { prospects, loading, error, createProspect, updateProspect, updateStatus } = useProspects(filters)
-  const { prospects: todosProspects } = useProspects({ status: 'todos', search: '' })
   const [showForm, setShowForm] = useState(false)
   const [editingProspect, setEditingProspect] = useState<Prospect | undefined>()
 
@@ -41,7 +40,7 @@ export default function DashboardVendedor() {
     <div className="min-h-screen bg-gray-50">
       <Header perfil={perfil} onSignOut={signOut} />
       <FilterBar filters={filters} onChange={setFilters} />
-      <AlertaBanner prospects={todosProspects} />
+      <AlertaBanner prospects={prospects} />
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
         {loading && (
