@@ -24,8 +24,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Follow-up Citel</h1>
-          <p className="text-gray-500 mt-1 text-sm">Diário comercial de vendas</p>
+          <h1 className="text-2xl font-bold text-gray-900">Equipe 14</h1>
+          <p className="text-gray-500 mt-1 text-sm">Folow-up - Diário Comercial de Vendas</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
