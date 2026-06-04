@@ -50,10 +50,6 @@ export default function DashboardGerente() {
   const abertos = prospects.filter(p => p.status === 'aberto').length
   const finalizados = prospects.filter(p => p.status === 'finalizado').length
   const perdidos = prospects.filter(p => p.status === 'perdido').length
-  const atrasados = prospects.filter(p => {
-    if (p.status !== 'aberto') return false
-    return new Date(p.proximo_retorno + 'T00:00:00') < hoje
-  })
   const taxaConversao = total > 0 ? Math.round((finalizados / total) * 100) : 0
 
   const vendedoresComProblema = resumos.filter(r => r.atrasados > 0)
@@ -162,9 +158,8 @@ export default function DashboardGerente() {
                   return (
                     <div
                       key={r.vendedor_id}
-                      className={`bg-white rounded-2xl border shadow-sm p-4 cursor-pointer transition-all ${
-                        isSelected ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-100 hover:border-gray-200'
-                      }`}
+                      className={`bg-white rounded-2xl border shadow-sm p-4 cursor-pointer transition-all ${isSelected ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-100 hover:border-gray-200'
+                        }`}
                       onClick={() => setVendedorSelecionado(isSelected ? null : r.vendedor_id)}
                     >
                       <div className="flex items-center gap-3 mb-3">
@@ -237,11 +232,10 @@ export default function DashboardGerente() {
                           <p className="text-xs text-gray-400 mt-0.5 truncate">{p.resumo_orcamento}</p>
                         </div>
                         <div className="text-right ml-4 shrink-0 space-y-1">
-                          <span className={`block text-xs font-medium px-2 py-1 rounded-lg ${
-                            p.status === 'aberto' ? 'bg-blue-50 text-blue-600' :
-                            p.status === 'finalizado' ? 'bg-green-50 text-green-600' :
-                            'bg-red-50 text-red-600'
-                          }`}>
+                          <span className={`block text-xs font-medium px-2 py-1 rounded-lg ${p.status === 'aberto' ? 'bg-blue-50 text-blue-600' :
+                              p.status === 'finalizado' ? 'bg-green-50 text-green-600' :
+                                'bg-red-50 text-red-600'
+                            }`}>
                             {p.status}
                           </span>
                           <p className={`text-xs ${atrasado ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
