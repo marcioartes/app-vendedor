@@ -1,14 +1,14 @@
 import { supabase } from '../lib/supabase'
-import type { Prospect, ProspectInsert, ProspectUpdate, Status } from '../types'
+import type { Prospect, ProspectInsert, ProspectUpdate, Etapa } from '../types'
 
 export async function getProspects(filters?: {
-  status?: Status | 'todos'
+  etapa?: Etapa | 'todos'
   search?: string
 }): Promise<Prospect[]> {
   let query = supabase.from('prospects').select('*')
 
-  if (filters?.status && filters.status !== 'todos') {
-    query = query.eq('status', filters.status)
+  if (filters?.etapa && filters.etapa !== 'todos') {
+    query = query.eq('etapa', filters.etapa)
   }
 
   if (filters?.search) {
@@ -19,7 +19,7 @@ export async function getProspects(filters?: {
     )
   }
 
-  const { data, error } = await query
+  const { data, error } = await query.order('created_at', { ascending: false })
   if (error) throw error
   return data || []
 }
@@ -50,13 +50,16 @@ export async function updateProspect(id: string, data: ProspectUpdate): Promise<
   return prospect
 }
 
-export async function updateStatus(id: string, status: Status): Promise<void> {
-  const { error } = await supabase
+export async function avancarEtapa(id: string, etapa: Etapa, dados?: ProspectUpdate): Promise<Prospect> {
+  const { data: prospect, error } = await supabase
     .from('prospects')
-    .update({ status })
+    .update({ etapa, ...dados })
     .eq('id', id)
+    .select()
+    .single()
 
   if (error) throw error
+  return prospect
 }
 
 export async function deleteProspect(id: string): Promise<void> {

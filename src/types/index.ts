@@ -1,4 +1,4 @@
-export type Status = 'aberto' | 'finalizado' | 'perdido'
+export type Etapa = 'contato' | 'orcamento' | 'negociacao' | 'fechado' | 'perdido'
 
 export type Role = 'vendedor' | 'gerente'
 
@@ -14,44 +14,45 @@ export interface Prospect {
   created_at: string
   updated_at: string
   vendedor_id: string
-  cliente_codigo_citel: string | null
+  etapa: Etapa
   nome_prospecto: string
   telefone: string
-  numero_orcamento_citel: string | null
-  resumo_orcamento: string
-  status: Status
+  observacoes: string | null
   proximo_retorno: string
+  cliente_codigo_citel: string | null
+  numero_orcamento_citel: string | null
+  valor_estimado: number | null
+  numero_nf: string | null
+  logistica: string | null
+  motivo_perda: string | null
 }
 
 export interface ProspectInsert {
-  cliente_codigo_citel?: string | null
+  etapa: Etapa
   nome_prospecto: string
   telefone: string
-  numero_orcamento_citel?: string | null
-  resumo_orcamento: string
-  status: Status
+  observacoes?: string | null
   proximo_retorno: string
-}
-
-export interface ProspectUpdate {
   cliente_codigo_citel?: string | null
-  nome_prospecto?: string
-  telefone?: string
   numero_orcamento_citel?: string | null
-  resumo_orcamento?: string
-  status?: Status
-  proximo_retorno?: string
+  valor_estimado?: number | null
+  numero_nf?: string | null
+  logistica?: string | null
+  motivo_perda?: string | null
 }
 
-export interface FilterState {
-  status: Status | 'todos'
-  search: string
-}
+export type ProspectUpdate = Partial<ProspectInsert>
 
 export interface Contato {
   id: string
   created_at: string
   prospect_id: string
   vendedor_id: string
+  etapa: Etapa
   anotacao: string
+}
+
+export interface FilterState {
+  etapa: Etapa | 'todos'
+  search: string
 }

@@ -1,24 +1,38 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
-import type { Prospect, ProspectInsert, ProspectUpdate, Status } from '../../types'
+import type { Prospect, ProspectInsert, ProspectUpdate, Etapa } from '../../types'
 
 interface ProspectFormProps {
   prospect?: Prospect
+  etapaInicial?: Etapa
   onSave: (data: ProspectInsert | ProspectUpdate) => Promise<void>
   onClose: () => void
 }
 
-export default function ProspectForm({ prospect, onSave, onClose }: ProspectFormProps) {
+const ETAPA_LABEL: Record<Etapa, string> = {
+  contato:    '📞 Contato',
+  orcamento:  '📋 Orçamento',
+  negociacao: '🤝 Negociação',
+  fechado:    '✅ Fechado',
+  perdido:    '❌ Perdido',
+}
+
+export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }: ProspectFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const etapa = etapaInicial || prospect?.etapa || 'contato'
+
   const [form, setForm] = useState({
     nome_prospecto: prospect?.nome_prospecto ?? '',
     telefone: prospect?.telefone ?? '',
+    observacoes: prospect?.observacoes ?? '',
+    proximo_retorno: prospect?.proximo_retorno ?? '',
     cliente_codigo_citel: prospect?.cliente_codigo_citel ?? '',
     numero_orcamento_citel: prospect?.numero_orcamento_citel ?? '',
-    resumo_orcamento: prospect?.resumo_orcamento ?? '',
-    proximo_retorno: prospect?.proximo_retorno ?? '',
-    status: prospect?.status ?? 'aberto' as Status,
+    valor_estimado: prospect?.valor_estimado?.toString() ?? '',
+    numero_nf: prospect?.numero_nf ?? '',
+    logistica: prospect?.logistica ?? '',
+    motivo_perda: prospect?.motivo_perda ?? '',
   })
 
   function set(field: string, value: string) {
@@ -27,17 +41,25 @@ export default function ProspectForm({ prospect, onSave, onClose }: ProspectForm
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.nome_prospecto || !form.telefone || !form.resumo_orcamento || !form.proximo_retorno) {
-      setError('Preencha todos os campos obrigatórios')
+    if (!form.nome_prospecto || !form.telefone || !form.proximo_retorno) {
+      setError('Preencha os campos obrigatórios')
       return
     }
     try {
       setLoading(true)
       setError(null)
       await onSave({
-        ...form,
+        etapa,
+        nome_prospecto: form.nome_prospecto,
+        telefone: form.telefone,
+        observacoes: form.observacoes || null,
+        proximo_retorno: form.proximo_retorno,
         cliente_codigo_citel: form.cliente_codigo_citel || null,
         numero_orcamento_citel: form.numero_orcamento_citel || null,
+        valor_estimado: form.valor_estimado ? parseFloat(form.valor_estimado) : null,
+        numero_nf: form.numero_nf || null,
+        logistica: form.logistica || null,
+        motivo_perda: form.motivo_perda || null,
       })
       onClose()
     } catch {
@@ -47,20 +69,30 @@ export default function ProspectForm({ prospect, onSave, onClose }: ProspectForm
     }
   }
 
+  const mostrarOrcamento = etapa === 'orcamento' || etapa === 'negociacao' || etapa === 'fechado'
+  const mostrarNF = etapa === 'negociacao' || etapa === 'fechado'
+  const mostrarFechamento = etapa === 'fechado'
+  const mostrarPerda = etapa === 'perdido'
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white px-4 pt-4 pb-3 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900">
-            {prospect ? 'Editar Prospecto' : 'Novo Prospecto'}
-          </h2>
+          <div>
+            <h2 className="font-semibold text-gray-900">
+              {prospect ? 'Editar Prospecto' : 'Novo Prospecto'}
+            </h2>
+            <span className="text-xs text-gray-400">{ETAPA_LABEL[etapa]}</span>
+          </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400">
             <X size={18} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
+
+          {/* Campos básicos */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nome do prospecto <span className="text-red-500">*</span>
@@ -89,45 +121,6 @@ export default function ProspectForm({ prospect, onSave, onClose }: ProspectForm
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Código cliente Citel
-            </label>
-            <input
-              type="text"
-              value={form.cliente_codigo_citel}
-              onChange={(e) => set('cliente_codigo_citel', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
-              placeholder="Opcional"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Número orçamento Citel
-            </label>
-            <input
-              type="text"
-              value={form.numero_orcamento_citel}
-              onChange={(e) => set('numero_orcamento_citel', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
-              placeholder="Opcional"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Resumo / Observações <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              value={form.resumo_orcamento}
-              onChange={(e) => set('resumo_orcamento', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base resize-none"
-              placeholder="Descreva o orçamento ou observações importantes"
-              rows={3}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
               Próximo retorno <span className="text-red-500">*</span>
             </label>
             <input
@@ -140,18 +133,122 @@ export default function ProspectForm({ prospect, onSave, onClose }: ProspectForm
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
+              Observações
             </label>
-            <select
-              value={form.status}
-              onChange={(e) => set('status', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
-            >
-              <option value="aberto">Aberto</option>
-              <option value="finalizado">Finalizado</option>
-              <option value="perdido">Perdido</option>
-            </select>
+            <textarea
+              value={form.observacoes}
+              onChange={(e) => set('observacoes', e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base resize-none"
+              placeholder="Observações do contato"
+              rows={2}
+            />
           </div>
+
+          {/* Campos de orçamento */}
+          {mostrarOrcamento && (
+            <>
+              <div className="border-t border-gray-100 pt-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase mb-3">Orçamento</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Código cliente Citel
+                </label>
+                <input
+                  type="text"
+                  value={form.cliente_codigo_citel}
+                  onChange={(e) => set('cliente_codigo_citel', e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                  placeholder="Código no sistema"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Número orçamento Citel
+                </label>
+                <input
+                  type="text"
+                  value={form.numero_orcamento_citel}
+                  onChange={(e) => set('numero_orcamento_citel', e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                  placeholder="Número do orçamento"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Valor estimado (R$)
+                </label>
+                <input
+                  type="number"
+                  value={form.valor_estimado}
+                  onChange={(e) => set('valor_estimado', e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                  placeholder="0,00"
+                  step="0.01"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Campo NF — aparece em negociação e fechado */}
+          {mostrarNF && (
+            <>
+              <div className="border-t border-gray-100 pt-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase mb-3">Documento Fiscal</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Número NF / Cupom Fiscal
+                </label>
+                <input
+                  type="text"
+                  value={form.numero_nf}
+                  onChange={(e) => set('numero_nf', e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                  placeholder="Número da nota ou cupom"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Campos de fechamento */}
+          {mostrarFechamento && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Logística / Entrega
+                </label>
+                <textarea
+                  value={form.logistica}
+                  onChange={(e) => set('logistica', e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base resize-none"
+                  placeholder="Dados de entrega"
+                  rows={2}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Campo de perda */}
+          {mostrarPerda && (
+            <>
+              <div className="border-t border-gray-100 pt-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase mb-3">Venda Perdida</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Motivo real da perda
+                </label>
+                <textarea
+                  value={form.motivo_perda}
+                  onChange={(e) => set('motivo_perda', e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base resize-none"
+                  placeholder="Por que perdemos essa venda?"
+                  rows={3}
+                />
+              </div>
+            </>
+          )}
 
           {error && (
             <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-xl">
@@ -162,9 +259,9 @@ export default function ProspectForm({ prospect, onSave, onClose }: ProspectForm
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            {loading ? 'Salvando...' : 'Salvar Prospecto'}
+            {loading ? 'Salvando...' : 'Salvar'}
           </button>
         </form>
       </div>

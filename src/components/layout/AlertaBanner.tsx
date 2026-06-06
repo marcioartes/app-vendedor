@@ -10,13 +10,13 @@ export default function AlertaBanner({ prospects }: AlertaBannerProps) {
   hoje.setHours(0, 0, 0, 0)
 
   const atrasados = prospects.filter((p) => {
-    if (p.status !== 'aberto') return false
+    if (p.etapa === 'fechado' || p.etapa === 'perdido') return false
     const retorno = new Date(p.proximo_retorno + 'T00:00:00')
     return retorno < hoje
   })
 
   const paraHoje = prospects.filter((p) => {
-    if (p.status !== 'aberto') return false
+    if (p.etapa === 'fechado' || p.etapa === 'perdido') return false
     const retorno = new Date(p.proximo_retorno + 'T00:00:00')
     return retorno.getTime() === hoje.getTime()
   })

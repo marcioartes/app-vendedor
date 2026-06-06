@@ -8,9 +8,11 @@ interface FilterBarProps {
 
 const TABS = [
   { label: 'Todos', value: 'todos' },
-  { label: 'Abertos', value: 'aberto' },
-  { label: 'Finalizados', value: 'finalizado' },
-  { label: 'Perdidos', value: 'perdido' },
+  { label: '📞 Contato', value: 'contato' },
+  { label: '📋 Orçamento', value: 'orcamento' },
+  { label: '🤝 Negociação', value: 'negociacao' },
+  { label: '✅ Fechado', value: 'fechado' },
+  { label: '❌ Perdido', value: 'perdido' },
 ] as const
 
 export default function FilterBar({ filters, onChange }: FilterBarProps) {
@@ -31,9 +33,9 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
           {TABS.map((tab) => (
             <button
               key={tab.value}
-              onClick={() => onChange({ ...filters, status: tab.value })}
+              onClick={() => onChange({ ...filters, etapa: tab.value })}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                filters.status === tab.value
+                filters.etapa === tab.value
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}

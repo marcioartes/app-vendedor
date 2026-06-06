@@ -1,24 +1,29 @@
-import { useState, useEffect, useRef } from 'react'
-import type { Prospect, Status, FilterState, ProspectInsert, ProspectUpdate } from '../types'
+import { useState, useEffect } from 'react'
+import type { Prospect, Etapa, FilterState, ProspectInsert, ProspectUpdate } from '../types'
 import * as prospectService from '../services/prospects'
 
 function ordenarProspects(prospects: Prospect[]): Prospect[] {
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
 
-  const abertosAtrasados: Prospect[] = []
-  const abertosHoje: Prospect[] = []
-  const abertosFuturos: Prospect[] = []
-  const finalizados: Prospect[] = []
+  const contatoAtrasados: Prospect[] = []
+  const contatoHoje: Prospect[] = []
+  const contatoFuturos: Prospect[] = []
+  const orcamento: Prospect[] = []
+  const negociacao: Prospect[] = []
+  const fechados: Prospect[] = []
   const perdidos: Prospect[] = []
 
   prospects.forEach((p) => {
-    if (p.status === 'finalizado') { finalizados.push(p); return }
-    if (p.status === 'perdido') { perdidos.push(p); return }
+    if (p.etapa === 'fechado') { fechados.push(p); return }
+    if (p.etapa === 'perdido') { perdidos.push(p); return }
+    if (p.etapa === 'negociacao') { negociacao.push(p); return }
+    if (p.etapa === 'orcamento') { orcamento.push(p); return }
+
     const retorno = new Date(p.proximo_retorno + 'T00:00:00')
-    if (retorno < hoje) { abertosAtrasados.push(p); return }
-    if (retorno.getTime() === hoje.getTime()) { abertosHoje.push(p); return }
-    abertosFuturos.push(p)
+    if (retorno < hoje) { contatoAtrasados.push(p); return }
+    if (retorno.getTime() === hoje.getTime()) { contatoHoje.push(p); return }
+    contatoFuturos.push(p)
   })
 
   const sortByRetorno = (a: Prospect, b: Prospect) =>
@@ -28,10 +33,12 @@ function ordenarProspects(prospects: Prospect[]): Prospect[] {
     new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
 
   return [
-    ...abertosAtrasados.sort(sortByRetorno),
-    ...abertosHoje,
-    ...abertosFuturos.sort(sortByRetorno),
-    ...finalizados.sort(sortByUpdated),
+    ...contatoAtrasados.sort(sortByRetorno),
+    ...contatoHoje,
+    ...contatoFuturos.sort(sortByRetorno),
+    ...orcamento.sort(sortByUpdated),
+    ...negociacao.sort(sortByUpdated),
+    ...fechados.sort(sortByUpdated),
     ...perdidos.sort(sortByUpdated),
   ]
 }
@@ -40,21 +47,13 @@ export function useProspects(filters: FilterState) {
   const [prospects, setProspects] = useState<Prospect[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const statusRef = useRef(filters.status)
-  const searchRef = useRef(filters.search)
 
   useEffect(() => {
-    statusRef.current = filters.status
-    searchRef.current = filters.search
-
     async function fetch() {
       try {
         setLoading(true)
         setError(null)
-        const data = await prospectService.getProspects({
-          status: statusRef.current,
-          search: searchRef.current,
-        })
+        const data = await prospectService.getProspects(filters)
         setProspects(ordenarProspects(data))
       } catch (err) {
         setError('Erro ao carregar prospectos')
@@ -64,7 +63,7 @@ export function useProspects(filters: FilterState) {
       }
     }
     fetch()
-  }, [filters.status, filters.search])
+  }, [filters.etapa, filters.search])
 
   async function createProspect(data: ProspectInsert) {
     const novo = await prospectService.createProspect(data)
@@ -78,10 +77,10 @@ export function useProspects(filters: FilterState) {
     )
   }
 
-  async function updateStatus(id: string, status: Status) {
-    await prospectService.updateStatus(id, status)
+  async function avancarEtapa(id: string, etapa: Etapa, dados?: ProspectUpdate) {
+    const atualizado = await prospectService.avancarEtapa(id, etapa, dados)
     setProspects((prev) =>
-      ordenarProspects(prev.map((p) => (p.id === id ? { ...p, status } : p)))
+      ordenarProspects(prev.map((p) => (p.id === id ? atualizado : p)))
     )
   }
 
@@ -96,7 +95,7 @@ export function useProspects(filters: FilterState) {
     error,
     createProspect,
     updateProspect,
-    updateStatus,
+    avancarEtapa,
     deleteProspect,
   }
 }

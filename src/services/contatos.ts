@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import type { Contato } from '../types'
+import type { Contato, Etapa } from '../types'
 
 export async function getContatos(prospectId: string): Promise<Contato[]> {
   const { data, error } = await supabase
@@ -12,7 +12,11 @@ export async function getContatos(prospectId: string): Promise<Contato[]> {
   return data || []
 }
 
-export async function createContato(prospectId: string, anotacao: string): Promise<Contato> {
+export async function createContato(
+  prospectId: string,
+  etapa: Etapa,
+  anotacao: string
+): Promise<Contato> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Usuário não autenticado')
 
@@ -21,6 +25,7 @@ export async function createContato(prospectId: string, anotacao: string): Promi
     .insert({
       prospect_id: prospectId,
       vendedor_id: user.id,
+      etapa,
       anotacao,
     })
     .select()
