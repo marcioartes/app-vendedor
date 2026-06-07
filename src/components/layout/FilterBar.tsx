@@ -12,6 +12,8 @@ const TABS = [
   { label: '📋 Orçamento', value: 'orcamento' },
   { label: '🤝 Negociação', value: 'negociacao' },
   { label: '✅ Fechado', value: 'fechado' },
+  { label: '�� Pós-venda', value: 'pos_venda' },
+  { label: '🏁 Concluído', value: 'concluido' },
   { label: '❌ Perdido', value: 'perdido' },
 ] as const
 

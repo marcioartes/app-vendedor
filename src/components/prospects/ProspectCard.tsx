@@ -12,7 +12,9 @@ const ETAPA_CONFIG: Record<Etapa, { label: string; emoji: string; cor: string; p
   contato:    { label: 'Contato',    emoji: '📞', cor: 'bg-blue-50 text-blue-600',    proxima: 'orcamento' },
   orcamento:  { label: 'Orçamento',  emoji: '📋', cor: 'bg-yellow-50 text-yellow-600', proxima: 'negociacao' },
   negociacao: { label: 'Negociação', emoji: '🤝', cor: 'bg-purple-50 text-purple-600', proxima: 'fechado' },
-  fechado:    { label: 'Fechado',    emoji: '✅', cor: 'bg-green-50 text-green-600' },
+  fechado:    { label: 'Fechado',    emoji: '✅', cor: 'bg-green-50 text-green-600',   proxima: 'pos_venda' },
+  pos_venda:  { label: 'Pós-venda', emoji: '🔄', cor: 'bg-teal-50 text-teal-600',    proxima: 'concluido' },
+  concluido:  { label: 'Concluído',  emoji: '🏁', cor: 'bg-green-50 text-green-700' },
   perdido:    { label: 'Perdido',    emoji: '❌', cor: 'bg-red-50 text-red-600' },
 }
 
@@ -20,16 +22,18 @@ const PROXIMA_LABEL: Record<string, string> = {
   orcamento:  'Avançar para Orçamento',
   negociacao: 'Avançar para Negociação',
   fechado:    'Marcar como Fechado',
+  pos_venda:  'Iniciar Pós-venda',
+  concluido:  'Concluir',
 }
 
 function getRetornoInfo(data: string, etapa: Etapa) {
-  if (etapa === 'fechado' || etapa === 'perdido') return null
+  if (etapa === 'concluido' || etapa === 'perdido') return null
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
   const retorno = new Date(data + 'T00:00:00')
-  if (retorno < hoje) return { label: 'Atrasado', color: 'text-red-500 bg-red-50' }
-  if (retorno.getTime() === hoje.getTime()) return { label: 'Hoje', color: 'text-yellow-600 bg-yellow-50' }
-  return { label: retorno.toLocaleDateString('pt-BR'), color: 'text-green-600 bg-green-50' }
+  if (retorno < hoje) return { label: `Retornar em: ${retorno.toLocaleDateString('pt-BR')}`, color: 'text-red-500 bg-red-50' }
+  if (retorno.getTime() === hoje.getTime()) return { label: 'Retornar em: hoje', color: 'text-yellow-600 bg-yellow-50' }
+  return { label: `Retornar em: ${retorno.toLocaleDateString('pt-BR')}`, color: 'text-green-600 bg-green-50' }
 }
 
 export default function ProspectCard({ prospect, onEdit, onAvancar }: ProspectCardProps) {
@@ -39,8 +43,6 @@ export default function ProspectCard({ prospect, onEdit, onAvancar }: ProspectCa
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
-
-      {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -54,20 +56,15 @@ export default function ProspectCard({ prospect, onEdit, onAvancar }: ProspectCa
             {prospect.telefone}
           </p>
         </div>
-        <button
-          onClick={() => onEdit(prospect)}
-          className="p-2 rounded-xl hover:bg-gray-100 transition-colors text-gray-400"
-        >
+        <button onClick={() => onEdit(prospect)} className="p-2 rounded-xl hover:bg-gray-100 transition-colors text-gray-400">
           <Edit2 size={16} />
         </button>
       </div>
 
-      {/* Observações */}
       {prospect.observacoes && (
         <p className="text-sm text-gray-600 line-clamp-2">{prospect.observacoes}</p>
       )}
 
-      {/* Dados do orçamento e NF */}
       {(prospect.numero_orcamento_citel || prospect.numero_nf) && (
         <div className="flex items-center gap-3 flex-wrap">
           {prospect.numero_orcamento_citel && (
@@ -86,17 +83,14 @@ export default function ProspectCard({ prospect, onEdit, onAvancar }: ProspectCa
         </div>
       )}
 
-      {/* Motivo da perda */}
       {prospect.etapa === 'perdido' && prospect.motivo_perda && (
         <p className="text-xs text-red-500 italic">"{prospect.motivo_perda}"</p>
       )}
 
-      {/* Logística */}
-      {prospect.etapa === 'fechado' && prospect.logistica && (
+      {prospect.etapa === 'concluido' && prospect.logistica && (
         <p className="text-xs text-gray-500">🚚 {prospect.logistica}</p>
       )}
 
-      {/* Footer */}
       <div className="flex items-center justify-between pt-1">
         {retorno ? (
           <span className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg ${retorno.color}`}>
@@ -109,7 +103,6 @@ export default function ProspectCard({ prospect, onEdit, onAvancar }: ProspectCa
           </span>
         )}
 
-        {/* Botão avançar etapa */}
         {proxima && prospect.etapa !== 'perdido' && (
           <div className="flex items-center gap-2">
             <button
@@ -119,17 +112,18 @@ export default function ProspectCard({ prospect, onEdit, onAvancar }: ProspectCa
               {PROXIMA_LABEL[proxima]}
               <ChevronRight size={14} />
             </button>
-            <button
-              onClick={() => onAvancar({ ...prospect, etapa: 'perdido' })}
-              className="text-xs text-gray-400 hover:text-red-500 transition-colors"
-            >
-              ❌
-            </button>
+            {prospect.etapa !== 'concluido' && (
+              <button
+                onClick={() => onAvancar({ ...prospect, etapa: 'perdido' })}
+                className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+              >
+                ❌
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {/* Timeline */}
       <Timeline prospectId={prospect.id} etapaAtual={prospect.etapa} />
     </div>
   )

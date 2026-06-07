@@ -1,4 +1,4 @@
-export type Etapa = 'contato' | 'orcamento' | 'negociacao' | 'fechado' | 'perdido'
+export type Etapa = 'contato' | 'orcamento' | 'negociacao' | 'fechado' | 'pos_venda' | 'concluido' | 'perdido'
 
 export type Role = 'vendedor' | 'gerente'
 

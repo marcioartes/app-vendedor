@@ -14,6 +14,8 @@ const ETAPA_LABEL: Record<Etapa, string> = {
   orcamento:  '📋 Orçamento',
   negociacao: '🤝 Negociação',
   fechado:    '✅ Fechado',
+  pos_venda:  '🔄 Pós-venda',
+  concluido:  '🏁 Concluído',
   perdido:    '❌ Perdido',
 }
 
@@ -69,9 +71,9 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
     }
   }
 
-  const mostrarOrcamento = etapa === 'orcamento' || etapa === 'negociacao' || etapa === 'fechado'
-  const mostrarNF = etapa === 'negociacao' || etapa === 'fechado'
-  const mostrarFechamento = etapa === 'fechado'
+  const mostrarOrcamento = ['orcamento', 'negociacao', 'fechado', 'pos_venda', 'concluido'].includes(etapa)
+  const mostrarNF = ['negociacao', 'fechado', 'pos_venda', 'concluido'].includes(etapa)
+  const mostrarLogistica = ['pos_venda', 'concluido'].includes(etapa)
   const mostrarPerda = etapa === 'perdido'
 
   return (
@@ -91,8 +93,6 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
-
-          {/* Campos básicos */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nome do prospecto <span className="text-red-500">*</span>
@@ -144,7 +144,6 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
             />
           </div>
 
-          {/* Campos de orçamento */}
           {mostrarOrcamento && (
             <>
               <div className="border-t border-gray-100 pt-3">
@@ -190,7 +189,6 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
             </>
           )}
 
-          {/* Campo NF — aparece em negociação e fechado */}
           {mostrarNF && (
             <>
               <div className="border-t border-gray-100 pt-3">
@@ -211,9 +209,11 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
             </>
           )}
 
-          {/* Campos de fechamento */}
-          {mostrarFechamento && (
+          {mostrarLogistica && (
             <>
+              <div className="border-t border-gray-100 pt-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase mb-3">Pós-venda</p>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Logística / Entrega
@@ -222,14 +222,13 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
                   value={form.logistica}
                   onChange={(e) => set('logistica', e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base resize-none"
-                  placeholder="Dados de entrega"
-                  rows={2}
+                  placeholder="Entrega ok? Aplicação correta? Cliente satisfeito?"
+                  rows={3}
                 />
               </div>
             </>
           )}
 
-          {/* Campo de perda */}
           {mostrarPerda && (
             <>
               <div className="border-t border-gray-100 pt-3">

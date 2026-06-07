@@ -1,46 +1,35 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useProspects } from '../hooks/useProspects'
 import Header from '../components/layout/Header'
-import FilterBar from '../components/layout/FilterBar'
-import AlertaBanner from '../components/layout/AlertaBanner'
-import ProspectCard from '../components/prospects/ProspectCard'
+import MetaDia from '../components/layout/MetaDia'
+import ProspectModal from '../components/prospects/ProspectModal'
 import ProspectForm from '../components/prospects/ProspectForm'
 import type { Prospect, Etapa, FilterState, ProspectInsert, ProspectUpdate } from '../types'
 
 export default function DashboardVendedor() {
   const { perfil, signOut } = useAuth()
-  const [filters, setFilters] = useState<FilterState>({ etapa: 'todos', search: '' })
-  const { prospects, loading, error, createProspect, updateProspect, avancarEtapa } = useProspects(filters)
-  const { prospects: todosProspects } = useProspects({ etapa: 'todos', search: '' })
+  const [filters] = useState<FilterState>({ etapa: 'todos', search: '' })
+  const { prospects, loading, createProspect, updateProspect, avancarEtapa } = useProspects(filters)
   const [showForm, setShowForm] = useState(false)
-  const [editingProspect, setEditingProspect] = useState<Prospect | undefined>()
-  const [etapaForm, setEtapaForm] = useState<Etapa>('contato')
+  const [modalProspect, setModalProspect] = useState<Prospect | null>(null)
 
-  function handleEdit(prospect: Prospect) {
-    setEditingProspect(prospect)
-    setEtapaForm(prospect.etapa)
-    setShowForm(true)
-  }
-
-  function handleAvancar(prospect: Prospect) {
-    setEditingProspect(prospect)
-    setEtapaForm(prospect.etapa)
-    setShowForm(true)
-  }
-
-  function handleClose() {
+  async function handleSalvar(data: ProspectInsert | ProspectUpdate) {
+    await createProspect(data as ProspectInsert)
     setShowForm(false)
-    setEditingProspect(undefined)
-    setEtapaForm('contato')
   }
 
-  async function handleSave(data: ProspectInsert | ProspectUpdate) {
-    if (editingProspect) {
-      await avancarEtapa(editingProspect.id, etapaForm, data as ProspectUpdate)
-    } else {
-      await createProspect(data as ProspectInsert)
+  async function handleUpdate(id: string, data: ProspectUpdate) {
+    await updateProspect(id, data)
+    if (modalProspect) {
+      setModalProspect({ ...modalProspect, ...data })
+    }
+  }
+
+  async function handleAvancar(id: string, etapa: Etapa, dados?: ProspectUpdate) {
+    await avancarEtapa(id, etapa, dados)
+    if (modalProspect) {
+      setModalProspect({ ...modalProspect, etapa, ...dados })
     }
   }
 
@@ -49,106 +38,94 @@ export default function DashboardVendedor() {
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
 
-  const contatosHoje = todosProspects.filter(p => {
+  const atrasados = prospects.filter(p => {
     if (p.etapa === 'fechado' || p.etapa === 'perdido') return false
-    const retorno = new Date(p.proximo_retorno + 'T00:00:00')
-    return retorno.getTime() === hoje.getTime()
-  }).length
+    return new Date(p.proximo_retorno + 'T00:00:00') < hoje
+  })
 
-  const atrasados = todosProspects.filter(p => {
+  const pendentes = prospects.filter(p => {
     if (p.etapa === 'fechado' || p.etapa === 'perdido') return false
-    const retorno = new Date(p.proximo_retorno + 'T00:00:00')
-    return retorno < hoje
-  }).length
-
-  const emNegociacao = todosProspects.filter(p => p.etapa === 'negociacao').length
-  const fechadosHoje = todosProspects.filter(p => {
-    if (p.etapa !== 'fechado') return false
-    const updated = new Date(p.updated_at)
-    updated.setHours(0, 0, 0, 0)
-    return updated.getTime() === hoje.getTime()
-  }).length
+    const criado = new Date(p.created_at)
+    criado.setHours(0, 0, 0, 0)
+    return criado.getTime() !== hoje.getTime()
+  })
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header perfil={perfil} onSignOut={signOut} />
 
-      {/* Métricas do dia */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Meu Dia</p>
-          <div className="grid grid-cols-4 gap-2">
-            <div className="text-center">
-              <p className="text-xl font-bold text-blue-600">{todosProspects.filter(p => p.etapa !== 'fechado' && p.etapa !== 'perdido').length}</p>
-              <p className="text-xs text-gray-400">ativos</p>
-            </div>
-            <div className="text-center">
-              <p className={`text-xl font-bold ${atrasados > 0 ? 'text-red-500' : 'text-gray-300'}`}>{atrasados}</p>
-              <p className="text-xs text-gray-400">atrasados</p>
-            </div>
-            <div className="text-center">
-              <p className={`text-xl font-bold ${contatosHoje > 0 ? 'text-yellow-500' : 'text-gray-300'}`}>{contatosHoje}</p>
-              <p className="text-xs text-gray-400">hoje</p>
-            </div>
-            <div className="text-center">
-              <p className={`text-xl font-bold ${emNegociacao > 0 ? 'text-purple-600' : 'text-gray-300'}`}>{emNegociacao}</p>
-              <p className="text-xs text-gray-400">negociando</p>
-            </div>
-          </div>
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
         </div>
-      </div>
-
-      <FilterBar filters={filters} onChange={setFilters} />
-      <AlertaBanner prospects={todosProspects} />
-
-      <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
-        {loading && (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">
-            {error}
-          </div>
-        )}
-
-        {!loading && prospects.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-gray-400 text-sm">Nenhum prospecto encontrado</p>
-            <p className="text-gray-300 text-xs mt-1">Clique em + para adicionar o primeiro</p>
-          </div>
-        )}
-
-        {prospects.map((prospect) => (
-          <ProspectCard
-            key={prospect.id}
-            prospect={prospect}
-            onEdit={handleEdit}
-            onAvancar={handleAvancar}
+      ) : (
+        <>
+          {/* Meta do dia */}
+          <MetaDia
+            prospects={prospects}
+            onNovo={() => setShowForm(true)}
+            onAbrir={(p) => setModalProspect(p)}
           />
-        ))}
-      </div>
 
-      <button
-        onClick={() => {
-          setEditingProspect(undefined)
-          setEtapaForm('contato')
-          setShowForm(true)
-        }}
-        className="fixed bottom-6 right-6 bg-blue-600 text-white rounded-2xl px-5 py-3.5 flex items-center gap-2 shadow-lg hover:bg-blue-700 active:bg-blue-800 transition-colors font-medium"
-      >
-        <Plus size={20} />
-        Novo Prospecto
-      </button>
+          {/* Alertas */}
+          <div className="max-w-2xl mx-auto px-4 pt-4 space-y-2">
+            {atrasados.length > 0 && (
+              <div className="bg-red-50 border border-red-100 rounded-2xl px-4 py-3 flex items-center justify-between">
+                <p className="text-sm text-red-700 font-medium">
+                  ⚠️ {atrasados.length} retorno(s) atrasado(s)
+                </p>
+                <div className="flex gap-2 overflow-x-auto">
+                  {atrasados.slice(0, 3).map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setModalProspect(p)}
+                      className="text-xs bg-white text-red-600 px-2 py-1 rounded-lg whitespace-nowrap border border-red-100"
+                    >
+                      {p.nome_prospecto}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
+            {pendentes.length > 0 && (
+              <div className="bg-yellow-50 border border-yellow-100 rounded-2xl px-4 py-3 flex items-center justify-between">
+                <p className="text-sm text-yellow-700 font-medium">
+                  📋 {pendentes.length} prospecto(s) pendente(s)
+                </p>
+                <div className="flex gap-2 overflow-x-auto">
+                  {pendentes.slice(0, 3).map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setModalProspect(p)}
+                      className="text-xs bg-white text-yellow-600 px-2 py-1 rounded-lg whitespace-nowrap border border-yellow-100"
+                    >
+                      {p.nome_prospecto}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Modal do prospecto */}
+      {modalProspect && (
+        <ProspectModal
+          prospect={modalProspect}
+          onClose={() => setModalProspect(null)}
+          onUpdate={handleUpdate}
+          onAvancar={handleAvancar}
+        />
+      )}
+
+      {/* Formulário novo prospecto */}
       {showForm && (
         <ProspectForm
-          prospect={editingProspect}
-          etapaInicial={etapaForm}
-          onSave={handleSave}
-          onClose={handleClose}
+          etapaInicial="contato"
+          onSave={handleSalvar}
+          onClose={() => setShowForm(false)}
         />
       )}
     </div>
