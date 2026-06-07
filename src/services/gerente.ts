@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import type { Prospect, Etapa } from '../types'
+import type { Prospect } from '../types'
 
 export interface ProspectComVendedor extends Prospect {
   vendedor_nome: string
@@ -28,9 +28,9 @@ export async function getProspectsComVendedores(): Promise<ProspectComVendedor[]
   if (err1) throw err1
   if (err2) throw err2
 
-  const perfilMap = new Map((perfis || []).map(p => [p.id, p.nome]))
+  const perfilMap = new Map((perfis || []).map((p: { id: string; nome: string }) => [p.id, p.nome]))
 
-  return (prospects || []).map(p => ({
+  return (prospects || []).map((p: any) => ({
     ...p,
     vendedor_nome: perfilMap.get(p.vendedor_id) || 'Desconhecido',
   }))
@@ -61,9 +61,16 @@ export function calcularResumoVendedores(prospects: ProspectComVendedor[]): Resu
 
     const r = map.get(p.vendedor_id)!
     r.total++
-    r[p.etapa as keyof ResumoVendedor] = (r[p.etapa as keyof ResumoVendedor] as number) + 1
 
-    if (p.etapa !== 'fechado' && p.etapa !== 'concluido' && p.etapa !== 'perdido') {
+    if (p.etapa === 'contato') r.contato++
+    else if (p.etapa === 'orcamento') r.orcamento++
+    else if (p.etapa === 'negociacao') r.negociacao++
+    else if (p.etapa === 'fechado') r.fechado++
+    else if (p.etapa === 'pos_venda') r.pos_venda++
+    else if (p.etapa === 'concluido') r.concluido++
+    else if (p.etapa === 'perdido') r.perdido++
+
+    if (!['fechado', 'concluido', 'perdido'].includes(p.etapa)) {
       const retorno = new Date(p.proximo_retorno + 'T00:00:00')
       if (retorno < hoje) r.atrasados++
     }

@@ -44,10 +44,6 @@ export default function DashboardGerente() {
   const ativos = prospects.filter(p => !['fechado', 'concluido', 'perdido'].includes(p.etapa)).length
   const taxaConversao = total > 0 ? Math.round((fechados / total) * 100) : 0
 
-  const atrasados = prospects.filter(p => {
-    if (['fechado', 'concluido', 'perdido'].includes(p.etapa)) return false
-    return new Date(p.proximo_retorno + 'T00:00:00') < hoje
-  })
 
   const vendedoresComProblema = resumos.filter(r => r.atrasados > 0)
   const prospectsFiltrados = vendedorSelecionado

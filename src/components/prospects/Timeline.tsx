@@ -1,27 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
-import type { Contato, Etapa } from '../../types'
+import type { Contato } from '../../types'
 import { getContatos, createContato, deleteContato } from '../../services/contatos'
 
 interface TimelineProps {
   prospectId: string
-  etapaAtual: Etapa
-}
-
-const ETAPA_LABEL: Record<Etapa, string> = {
-  contato: '📞 Contato',
-  orcamento: '📋 Orçamento',
-  negociacao: '🤝 Negociação',
-  fechado: '✅ Fechado',
-  perdido: '❌ Perdido',
-}
-
-const ETAPA_COLOR: Record<Etapa, string> = {
-  contato: 'bg-blue-50 text-blue-600',
-  orcamento: 'bg-yellow-50 text-yellow-600',
-  negociacao: 'bg-purple-50 text-purple-600',
-  fechado: 'bg-green-50 text-green-600',
-  perdido: 'bg-red-50 text-red-600',
+  etapaAtual: string
 }
 
 function agruparPorEtapa(contatos: Contato[]): Record<string, Contato[]> {
@@ -30,6 +14,26 @@ function agruparPorEtapa(contatos: Contato[]): Record<string, Contato[]> {
     acc[c.etapa].push(c)
     return acc
   }, {} as Record<string, Contato[]>)
+}
+
+const ETAPA_LABEL: Record<string, string> = {
+  contato:    '�� Contato',
+  orcamento:  '📋 Orçamento',
+  negociacao: '🤝 Negociação',
+  fechado:    '✅ Fechado',
+  pos_venda:  '🔄 Pós-venda',
+  concluido:  '🏁 Concluído',
+  perdido:    '❌ Perdido',
+}
+
+const ETAPA_COLOR: Record<string, string> = {
+  contato:    'bg-blue-50 text-blue-600',
+  orcamento:  'bg-yellow-50 text-yellow-600',
+  negociacao: 'bg-purple-50 text-purple-600',
+  fechado:    'bg-green-50 text-green-600',
+  pos_venda:  'bg-teal-50 text-teal-600',
+  concluido:  'bg-green-50 text-green-700',
+  perdido:    'bg-red-50 text-red-600',
 }
 
 export default function Timeline({ prospectId, etapaAtual }: TimelineProps) {
@@ -50,7 +54,7 @@ export default function Timeline({ prospectId, etapaAtual }: TimelineProps) {
     if (!anotacao.trim()) return
     try {
       setSalvando(true)
-      const novo = await createContato(prospectId, etapaAtual, anotacao.trim())
+      const novo = await createContato(prospectId, etapaAtual as any, anotacao.trim())
       setContatos((prev) => [novo, ...prev])
       setAnotacao('')
     } finally {
@@ -73,7 +77,7 @@ export default function Timeline({ prospectId, etapaAtual }: TimelineProps) {
   }
 
   const grupos = agruparPorEtapa(contatos)
-  const etapasComEventos = Object.keys(grupos) as Etapa[]
+  const etapasComEventos = Object.keys(grupos)
 
   return (
     <div className="border-t border-gray-100 pt-3 mt-1">
@@ -90,7 +94,7 @@ export default function Timeline({ prospectId, etapaAtual }: TimelineProps) {
             <textarea
               value={anotacao}
               onChange={(e) => setAnotacao(e.target.value)}
-              placeholder={`Registrar evento em ${ETAPA_LABEL[etapaAtual]}...`}
+              placeholder={`Registrar evento em ${ETAPA_LABEL[etapaAtual] || etapaAtual}...`}
               className="flex-1 px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
               rows={2}
             />
@@ -117,8 +121,8 @@ export default function Timeline({ prospectId, etapaAtual }: TimelineProps) {
 
           {etapasComEventos.map((etapa) => (
             <div key={etapa}>
-              <span className={`text-xs font-medium px-2 py-1 rounded-lg ${ETAPA_COLOR[etapa]}`}>
-                {ETAPA_LABEL[etapa]}
+              <span className={`text-xs font-medium px-2 py-1 rounded-lg ${ETAPA_COLOR[etapa] || 'bg-gray-50 text-gray-600'}`}>
+                {ETAPA_LABEL[etapa] || etapa}
               </span>
               <div className="mt-2 space-y-2 ml-2 border-l-2 border-gray-100 pl-3">
                 {grupos[etapa].map((contato) => (
