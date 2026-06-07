@@ -8,12 +8,11 @@ export function exportarRelatorioMensal(
 ) {
   const wb = XLSX.utils.book_new()
 
-  // ABA 1 — Resumo Executivo
   const total = prospects.length
-  const finalizados = prospects.filter(p => p.status === 'finalizado').length
-  const perdidos = prospects.filter(p => p.status === 'perdido').length
-  const abertos = prospects.filter(p => p.status === 'aberto').length
-  const taxa = total > 0 ? Math.round((finalizados / total) * 100) : 0
+  const fechados = prospects.filter(p => p.etapa === 'fechado' || p.etapa === 'concluido').length
+  const perdidos = prospects.filter(p => p.etapa === 'perdido').length
+  const ativos = prospects.filter(p => !['fechado', 'concluido', 'perdido'].includes(p.etapa)).length
+  const taxa = total > 0 ? Math.round((fechados / total) * 100) : 0
 
   const resumoGeral = [
     ['RELATÓRIO MENSAL DE FOLLOW-UP COMERCIAL'],
@@ -22,53 +21,55 @@ export function exportarRelatorioMensal(
     [],
     ['RESUMO GERAL'],
     ['Total de Prospectos', total],
-    ['Abertos', abertos],
-    ['Finalizados', finalizados],
+    ['Ativos', ativos],
+    ['Fechados/Concluídos', fechados],
     ['Perdidos', perdidos],
     ['Taxa de Conversão', `${taxa}%`],
     [],
     ['RANKING POR VENDEDOR'],
-    ['Vendedor', 'Total', 'Abertos', 'Finalizados', 'Perdidos', 'Conversão', 'Atrasados'],
+    ['Vendedor', 'Total', 'Contato', 'Orçamento', 'Negociação', 'Fechado', 'Pós-venda', 'Concluído', 'Perdido', 'Conversão', 'Atrasados'],
     ...resumos.map((r, i) => [
       `${i + 1}º ${r.vendedor_nome}`,
       r.total,
-      r.abertos,
-      r.finalizados,
-      r.perdidos,
-      `${r.total > 0 ? Math.round((r.finalizados / r.total) * 100) : 0}%`,
+      r.contato,
+      r.orcamento,
+      r.negociacao,
+      r.fechado,
+      r.pos_venda,
+      r.concluido,
+      r.perdido,
+      `${r.total > 0 ? Math.round(((r.fechado + r.concluido) / r.total) * 100) : 0}%`,
       r.atrasados > 0 ? `⚠️ ${r.atrasados}` : '0',
     ]),
   ]
 
   const ws1 = XLSX.utils.aoa_to_sheet(resumoGeral)
-  ws1['!cols'] = [{ wch: 25 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }]
+  ws1['!cols'] = [{ wch: 25 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }]
   XLSX.utils.book_append_sheet(wb, ws1, 'Resumo Executivo')
 
-  // ABA 2 — Detalhamento
   const detalhamento = [
     ['DETALHAMENTO DE PROSPECTOS'],
     ['Período:', mes],
     [],
-    ['Vendedor', 'Cliente', 'Telefone', 'Nº Orçamento', 'Status', 'Próximo Retorno', 'Resumo'],
+    ['Vendedor', 'Cliente', 'Telefone', 'Nº Orçamento', 'Etapa', 'Próximo Retorno', 'Observações'],
     ...prospects.map(p => [
       p.vendedor_nome,
       p.nome_prospecto,
       p.telefone,
       p.numero_orcamento_citel || '-',
-      p.status.toUpperCase(),
+      p.etapa.toUpperCase(),
       new Date(p.proximo_retorno + 'T00:00:00').toLocaleDateString('pt-BR'),
-      p.resumo_orcamento,
+      p.observacoes || '-',
     ]),
   ]
 
   const ws2 = XLSX.utils.aoa_to_sheet(detalhamento)
   ws2['!cols'] = [
     { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 },
-    { wch: 12 }, { wch: 15 }, { wch: 40 },
+    { wch: 15 }, { wch: 15 }, { wch: 40 },
   ]
   XLSX.utils.book_append_sheet(wb, ws2, 'Detalhamento')
 
-  // Baixar arquivo
   const nomeArquivo = `relatorio-followup-${mes.replace('/', '-')}.xlsx`
   XLSX.writeFile(wb, nomeArquivo)
 }

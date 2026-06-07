@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import type { Prospect } from '../types'
+import type { Prospect, Etapa } from '../types'
 
 export interface ProspectComVendedor extends Prospect {
   vendedor_nome: string
@@ -9,9 +9,13 @@ export interface ResumoVendedor {
   vendedor_id: string
   vendedor_nome: string
   total: number
-  abertos: number
-  finalizados: number
-  perdidos: number
+  contato: number
+  orcamento: number
+  negociacao: number
+  fechado: number
+  pos_venda: number
+  concluido: number
+  perdido: number
   atrasados: number
 }
 
@@ -44,24 +48,26 @@ export function calcularResumoVendedores(prospects: ProspectComVendedor[]): Resu
         vendedor_id: p.vendedor_id,
         vendedor_nome: p.vendedor_nome,
         total: 0,
-        abertos: 0,
-        finalizados: 0,
-        perdidos: 0,
+        contato: 0,
+        orcamento: 0,
+        negociacao: 0,
+        fechado: 0,
+        pos_venda: 0,
+        concluido: 0,
+        perdido: 0,
         atrasados: 0,
       })
     }
 
     const r = map.get(p.vendedor_id)!
     r.total++
+    r[p.etapa as keyof ResumoVendedor] = (r[p.etapa as keyof ResumoVendedor] as number) + 1
 
-    if (p.status === 'aberto') {
-      r.abertos++
+    if (p.etapa !== 'fechado' && p.etapa !== 'concluido' && p.etapa !== 'perdido') {
       const retorno = new Date(p.proximo_retorno + 'T00:00:00')
       if (retorno < hoje) r.atrasados++
     }
-    if (p.status === 'finalizado') r.finalizados++
-    if (p.status === 'perdido') r.perdidos++
   })
 
-  return Array.from(map.values()).sort((a, b) => b.total - a.total)
+  return Array.from(map.values()).sort((a, b) => b.fechado - a.fechado)
 }
