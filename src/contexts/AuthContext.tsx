@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import type { Perfil } from '../services/auth'
-import { getPerfil, signOut as authSignOut } from '../services/auth'
+import { getPerfil } from '../services/auth'
 
 interface AuthContextType {
   perfil: Perfil | null
@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return
+
         if (event === 'SIGNED_IN' && session?.user) {
           try {
             const p = await getPerfil(session.user.id)
@@ -55,10 +56,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (mounted) setLoading(false)
           }
         }
+
         if (event === 'SIGNED_OUT') {
           if (mounted) {
             setPerfil(null)
             setLoading(false)
+            window.location.href = '/login'
           }
         }
       }
@@ -71,8 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function signOut() {
-    await authSignOut()
-    setPerfil(null)
+    await supabase.auth.signOut()
   }
 
   return (
