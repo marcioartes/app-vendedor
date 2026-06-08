@@ -23,50 +23,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true
 
-    async function init() {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        console.log('getSession:', session?.user?.id, error)
-        if (!mounted) return
-        if (session?.user) {
-          const p = await getPerfil(session.user.id)
-          console.log('getPerfil:', p)
-          if (mounted) setPerfil(p)
-        }
-      } catch (err) {
-        console.error('init error:', err)
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    }
-
-    const timeout = setTimeout(() => {
-      if (mounted) setLoading(false)
-    }, 3000)
-
-    init()
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('onAuthStateChange:', event, session?.user?.id)
+      async (_event, session) => {
         if (!mounted) return
         if (session?.user) {
           try {
             const p = await getPerfil(session.user.id)
-            console.log('getPerfil from event:', p)
-            if (mounted) setPerfil(p)
-          } catch (err) {
-            console.error('getPerfil error:', err)
+            if (mounted) {
+              setPerfil(p)
+              setLoading(false)
+            }
+          } catch {
+            if (mounted) setLoading(false)
           }
         } else {
-          if (mounted) setPerfil(null)
+          if (mounted) {
+            setPerfil(null)
+            setLoading(false)
+          }
         }
       }
     )
 
     return () => {
       mounted = false
-      clearTimeout(timeout)
       subscription.unsubscribe()
     }
   }, [])
