@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
+import { toast } from 'sonner'
 import type { Prospect, ProspectInsert, ProspectUpdate, Etapa } from '../../types'
 
 interface ProspectFormProps {
@@ -10,18 +11,17 @@ interface ProspectFormProps {
 }
 
 const ETAPA_LABEL: Record<Etapa, string> = {
-  contato:    '📞 Contato',
-  orcamento:  '📋 Orçamento',
-  negociacao: '🤝 Negociação',
-  fechado:    '✅ Fechado',
-  pos_venda:  '🔄 Pós-venda',
-  concluido:  '🏁 Concluído',
-  perdido:    '❌ Perdido',
+  contato:    'Contato',
+  orcamento:  'Orçamento',
+  negociacao: 'Negociação',
+  fechado:    'Fechado',
+  pos_venda:  'Pós-venda',
+  concluido:  'Concluído',
+  perdido:    'Perdido',
 }
 
 export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }: ProspectFormProps) {
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const etapa = etapaInicial || prospect?.etapa || 'contato'
 
   const [form, setForm] = useState({
@@ -43,30 +43,40 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.nome_prospecto || !form.telefone || !form.proximo_retorno) {
-      setError('Preencha os campos obrigatórios')
+
+    if (!form.nome_prospecto.trim()) {
+      toast.error('Nome do prospecto é obrigatório')
       return
     }
+    if (!form.telefone.trim()) {
+      toast.error('Telefone é obrigatório')
+      return
+    }
+    if (!form.proximo_retorno) {
+      toast.error('Próximo retorno é obrigatório')
+      return
+    }
+
     try {
       setLoading(true)
-      setError(null)
       await onSave({
         etapa,
-        nome_prospecto: form.nome_prospecto,
-        telefone: form.telefone,
-        observacoes: form.observacoes || null,
+        nome_prospecto: form.nome_prospecto.trim(),
+        telefone: form.telefone.trim(),
+        observacoes: form.observacoes.trim() || null,
         proximo_retorno: form.proximo_retorno,
-        cliente_codigo_citel: form.cliente_codigo_citel || null,
-        numero_orcamento_citel: form.numero_orcamento_citel || null,
+        cliente_codigo_citel: form.cliente_codigo_citel.trim() || null,
+        numero_orcamento_citel: form.numero_orcamento_citel.trim() || null,
         valor_estimado: form.valor_estimado ? parseFloat(form.valor_estimado) : null,
-        numero_nf: form.numero_nf || null,
-        logistica: form.logistica || null,
-        motivo_perda: form.motivo_perda || null,
+        numero_nf: form.numero_nf.trim() || null,
+        logistica: form.logistica.trim() || null,
+        motivo_perda: form.motivo_perda.trim() || null,
       })
+      toast.success(prospect ? 'Prospecto atualizado!' : 'Prospecto salvo com sucesso!')
       onClose()
-    } catch {
-      setError('Erro ao salvar. Tente novamente.')
-    } finally {
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao salvar. Tente novamente.')
       setLoading(false)
     }
   }
@@ -150,9 +160,7 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
                 <p className="text-xs font-semibold text-gray-400 uppercase mb-3">Orçamento</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Código cliente Citel
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Código cliente Citel</label>
                 <input
                   type="text"
                   value={form.cliente_codigo_citel}
@@ -162,9 +170,7 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número orçamento Citel
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Número orçamento Citel</label>
                 <input
                   type="text"
                   value={form.numero_orcamento_citel}
@@ -174,9 +180,7 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Valor estimado (R$)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Valor estimado (R$)</label>
                 <input
                   type="number"
                   value={form.valor_estimado}
@@ -195,9 +199,7 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
                 <p className="text-xs font-semibold text-gray-400 uppercase mb-3">Documento Fiscal</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número NF / Cupom Fiscal
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Número NF / Cupom Fiscal</label>
                 <input
                   type="text"
                   value={form.numero_nf}
@@ -215,9 +217,7 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
                 <p className="text-xs font-semibold text-gray-400 uppercase mb-3">Pós-venda</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Logística / Entrega
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Logística / Entrega</label>
                 <textarea
                   value={form.logistica}
                   onChange={(e) => set('logistica', e.target.value)}
@@ -235,9 +235,7 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
                 <p className="text-xs font-semibold text-gray-400 uppercase mb-3">Venda Perdida</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Motivo real da perda
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Motivo real da perda</label>
                 <textarea
                   value={form.motivo_perda}
                   onChange={(e) => set('motivo_perda', e.target.value)}
@@ -247,12 +245,6 @@ export default function ProspectForm({ prospect, etapaInicial, onSave, onClose }
                 />
               </div>
             </>
-          )}
-
-          {error && (
-            <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-xl">
-              {error}
-            </div>
           )}
 
           <button
