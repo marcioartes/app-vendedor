@@ -38,7 +38,21 @@ export default function DashboardVendedor() {
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
 
+  const etapasFinalizadas = ['fechado', 'concluido', 'perdido']
+
   const atrasados = prospects.filter(p => {
+    if (etapasFinalizadas.includes(p.etapa)) return false
+    return new Date(p.proximo_retorno + 'T00:00:00') < hoje
+  })
+
+  const pendentes = prospects.filter(p => {
+    if (etapasFinalizadas.includes(p.etapa)) return false
+    const criado = new Date(p.created_at)
+    criado.setHours(0, 0, 0, 0)
+    return criado.getTime() !== hoje.getTime()
+  })
+
+  /*const atrasados = prospects.filter(p => {
     if (p.etapa === 'fechado' || p.etapa === 'perdido') return false
     return new Date(p.proximo_retorno + 'T00:00:00') < hoje
   })
@@ -48,7 +62,7 @@ export default function DashboardVendedor() {
     const criado = new Date(p.created_at)
     criado.setHours(0, 0, 0, 0)
     return criado.getTime() !== hoje.getTime()
-  })
+  })*/
 
   return (
     <div className="min-h-screen bg-gray-50">
