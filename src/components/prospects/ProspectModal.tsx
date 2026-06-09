@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { X, Phone, ChevronRight, Edit2 } from 'lucide-react'
+import { toast } from 'sonner'
 import type { Prospect, Etapa, ProspectUpdate } from '../../types'
 import Timeline from './Timeline'
 import ProspectForm from './ProspectForm'
+import ModalFechamento from './ModalFechamento'
 
 interface ProspectModalProps {
   prospect: Prospect
@@ -11,14 +13,14 @@ interface ProspectModalProps {
   onAvancar: (id: string, etapa: Etapa, dados?: ProspectUpdate) => Promise<void>
 }
 
-const ETAPA_CONFIG: Record<Etapa, { label: string; emoji: string; cor: string; progresso: number; proxima?: Etapa }> = {
-  contato:    { label: 'Contato',    emoji: '📞', cor: 'bg-blue-400',   progresso: 15,  proxima: 'orcamento' },
-  orcamento:  { label: 'Orçamento',  emoji: '📋', cor: 'bg-yellow-400', progresso: 35,  proxima: 'negociacao' },
-  negociacao: { label: 'Negociação', emoji: '🤝', cor: 'bg-purple-500', progresso: 55,  proxima: 'fechado' },
-  fechado:    { label: 'Fechado',    emoji: '✅', cor: 'bg-green-500',  progresso: 75,  proxima: 'pos_venda' },
-  pos_venda:  { label: 'Pós-venda', emoji: '🔄', cor: 'bg-teal-500',   progresso: 90,  proxima: 'concluido' },
-  concluido:  { label: 'Concluído',  emoji: '🏁', cor: 'bg-green-600',  progresso: 100 },
-  perdido:    { label: 'Perdido',    emoji: '❌', cor: 'bg-red-400',    progresso: 0 },
+const ETAPA_CONFIG: Record<Etapa, { label: string; cor: string; progresso: number; proxima?: Etapa }> = {
+  contato:    { label: 'Contato',    cor: 'bg-blue-400',   progresso: 15,  proxima: 'orcamento' },
+  orcamento:  { label: 'Orçamento',  cor: 'bg-yellow-400', progresso: 35,  proxima: 'negociacao' },
+  negociacao: { label: 'Negociação', cor: 'bg-purple-500', progresso: 55,  proxima: 'fechado' },
+  fechado:    { label: 'Fechado',    cor: 'bg-green-500',  progresso: 75 },
+  pos_venda:  { label: 'Pós-venda', cor: 'bg-teal-500',   progresso: 90,  proxima: 'concluido' },
+  concluido:  { label: 'Concluído',  cor: 'bg-green-600',  progresso: 100 },
+  perdido:    { label: 'Perdido',    cor: 'bg-red-400',    progresso: 0 },
 }
 
 const PROXIMA_LABEL: Record<string, string> = {
@@ -34,6 +36,7 @@ const ETAPAS_FUNIL: Etapa[] = ['contato', 'orcamento', 'negociacao', 'fechado', 
 export default function ProspectModal({ prospect, onClose, onUpdate, onAvancar }: ProspectModalProps) {
   const [editando, setEditando] = useState(false)
   const [avancando, setAvancando] = useState<Etapa | null>(null)
+  const [showFechamento, setShowFechamento] = useState(false)
   const [prospectAtual, setProspectAtual] = useState(prospect)
 
   const config = ETAPA_CONFIG[prospectAtual.etapa]
@@ -43,12 +46,36 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onAvancar }
     await onUpdate(prospectAtual.id, data)
     setProspectAtual({ ...prospectAtual, ...data })
     setEditando(false)
+    toast.success('Prospecto atualizado!')
   }
 
   async function handleAvancar(etapa: Etapa, data?: ProspectUpdate) {
+    // Se está avançando para fechado, mostra modal de fechamento
+    if (etapa === 'fechado') {
+      await onAvancar(prospectAtual.id, 'fechado', data)
+      setProspectAtual({ ...prospectAtual, etapa: 'fechado', ...data })
+      setAvancando(null)
+      setShowFechamento(true)
+      return
+    }
     await onAvancar(prospectAtual.id, etapa, data)
     setProspectAtual({ ...prospectAtual, etapa, ...data })
     setAvancando(null)
+    toast.success('Etapa atualizada!')
+  }
+
+  async function handleAgendarPosVenda(dataRetorno: string) {
+    await onAvancar(prospectAtual.id, 'pos_venda', { proximo_retorno: dataRetorno })
+    setProspectAtual({ ...prospectAtual, etapa: 'pos_venda', proximo_retorno: dataRetorno })
+    setShowFechamento(false)
+    toast.success('Pós-venda agendado!')
+  }
+
+  async function handleConcluirDireto() {
+    await onAvancar(prospectAtual.id, 'concluido')
+    setProspectAtual({ ...prospectAtual, etapa: 'concluido' })
+    setShowFechamento(false)
+    toast.success('Venda concluída!')
   }
 
   if (editando) {
@@ -69,6 +96,17 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onAvancar }
         etapaInicial={avancando}
         onSave={(data) => handleAvancar(avancando, data as ProspectUpdate)}
         onClose={() => setAvancando(null)}
+      />
+    )
+  }
+
+  if (showFechamento) {
+    return (
+      <ModalFechamento
+        nomeProspecto={prospectAtual.nome_prospecto}
+        onAgendar={handleAgendarPosVenda}
+        onConcluir={handleConcluirDireto}
+        onClose={() => setShowFechamento(false)}
       />
     )
   }
@@ -110,7 +148,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onAvancar }
                 prospectAtual.etapa === 'concluido'  ? 'bg-green-50 text-green-700' :
                 'bg-red-50 text-red-600'
               }`}>
-                {config.emoji} {config.label}
+                {config.label}
               </span>
               <span className="text-xs text-gray-400">{config.progresso}%</span>
             </div>
@@ -126,7 +164,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onAvancar }
                 return (
                   <div
                     key={etapa}
-                    className="absolute top-0 bottom-0 w-px bg-white opacity-60"
+                    className="absolute top-0 bottom-0 w-px bg-white opacity-40"
                     style={{ left: `${pos}%` }}
                   />
                 )
@@ -136,7 +174,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onAvancar }
             <div className="flex justify-between mt-1">
               {ETAPAS_FUNIL.map((e) => (
                 <span key={e} className={`text-xs ${prospectAtual.etapa === e ? 'text-gray-700 font-medium' : 'text-gray-300'}`}>
-                  {ETAPA_CONFIG[e].emoji}
+                  {ETAPA_CONFIG[e].label.charAt(0)}
                 </span>
               ))}
             </div>
@@ -178,7 +216,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onAvancar }
           )}
 
           {/* Botões de avanço */}
-          {proxima && prospectAtual.etapa !== 'perdido' && (
+          {proxima && prospectAtual.etapa !== 'perdido' && prospectAtual.etapa !== 'concluido' && (
             <div className="flex gap-2">
               <button
                 onClick={() => setAvancando(proxima)}
@@ -187,14 +225,12 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onAvancar }
                 {PROXIMA_LABEL[proxima]}
                 <ChevronRight size={16} />
               </button>
-              {prospectAtual.etapa !== 'concluido' && (
-                <button
-                  onClick={() => setAvancando('perdido')}
-                  className="px-4 py-2.5 bg-red-50 text-red-500 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors"
-                >
-                  ❌ Perdido
-                </button>
-              )}
+              <button
+                onClick={() => setAvancando('perdido')}
+                className="px-4 py-2.5 bg-red-50 text-red-500 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors"
+              >
+                Perdido
+              </button>
             </div>
           )}
 
