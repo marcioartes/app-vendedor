@@ -7,7 +7,7 @@ interface MetaDiaProps {
   onAbrir: (prospect: Prospect) => void
 }
 
-const META = 5
+const META_MINIMA = 5
 
 const ETAPA_PROGRESSO: Record<Etapa, number> = {
   contato:    15,
@@ -52,13 +52,13 @@ const ETAPA_TEXT_COR: Record<Etapa, string> = {
 const ETAPAS_FUNIL: Etapa[] = ['contato', 'orcamento', 'negociacao', 'fechado', 'pos_venda', 'concluido']
 
 const ETAPA_ICON: Record<Etapa, React.ReactNode> = {
-  contato:    <Phone size={12} />,
-  orcamento:  <FileText size={12} />,
-  negociacao: <Handshake size={12} />,
-  fechado:    <CheckCircle size={12} />,
-  pos_venda:  <RefreshCw size={12} />,
-  concluido:  <Flag size={12} />,
-  perdido:    <AlertCircle size={12} />,
+  contato:    <Phone size={11} />,
+  orcamento:  <FileText size={11} />,
+  negociacao: <Handshake size={11} />,
+  fechado:    <CheckCircle size={11} />,
+  pos_venda:  <RefreshCw size={11} />,
+  concluido:  <Flag size={11} />,
+  perdido:    <AlertCircle size={11} />,
 }
 
 const MARCACOES = [15, 35, 55, 75, 90]
@@ -80,11 +80,15 @@ export default function MetaDia({ prospects, onNovo, onAbrir }: MetaDiaProps) {
     const criado = new Date(p.created_at)
     criado.setHours(0, 0, 0, 0)
     return criado.getTime() === hoje.getTime()
-  }).slice(0, META)
+  })
 
-  const progresso = prospectosDoDia.length
-  const metaBatida = progresso >= META
-  const slots = Array.from({ length: META })
+  const total = prospectosDoDia.length
+  const metaBatida = total >= META_MINIMA
+
+  // Sempre mostra os prospectos + 1 slot vazio no final
+  // Mínimo de META_MINIMA slots
+  const totalSlots = Math.max(META_MINIMA, total + 1)
+  const slots = Array.from({ length: totalSlots })
 
   return (
     <div className="bg-white border-b border-gray-100">
@@ -94,7 +98,9 @@ export default function MetaDia({ prospects, onNovo, onAbrir }: MetaDiaProps) {
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Meta do Dia</p>
             <p className={`text-sm font-semibold mt-0.5 ${metaBatida ? 'text-green-600' : 'text-gray-700'}`}>
-              {metaBatida ? 'Meta batida! Parabéns!' : `${progresso} de ${META} prospectos`}
+              {metaBatida
+                ? `Meta batida! ${total} prospectos hoje 🎉`
+                : `${total} de ${META_MINIMA} prospectos`}
             </p>
           </div>
         </div>
@@ -114,7 +120,6 @@ export default function MetaDia({ prospects, onNovo, onAbrir }: MetaDiaProps) {
 
               return (
                 <button key={i} onClick={() => onAbrir(prospect)} className="w-full text-left">
-                  {/* Nome e status */}
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5 min-w-0">
                       {(urgente || perdido) && (
@@ -130,14 +135,12 @@ export default function MetaDia({ prospects, onNovo, onAbrir }: MetaDiaProps) {
                     </span>
                   </div>
 
-                  {/* Data retorno */}
                   {retornoInfo && (
                     <p className={`text-xs mb-1.5 ${urgente ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
                       {retornoInfo.label}
                     </p>
                   )}
 
-                  {/* Barra */}
                   <div className="relative w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                     <div
                       className={`h-2 rounded-full transition-all ${cor}`}
@@ -152,15 +155,14 @@ export default function MetaDia({ prospects, onNovo, onAbrir }: MetaDiaProps) {
                     ))}
                   </div>
 
-                  {/* Legenda do funil */}
-                  <div className="flex justify-between mt-2">
+                  <div className="flex justify-between mt-1.5">
                     {ETAPAS_FUNIL.map((etapa) => {
                       const ativo = prospect.etapa === etapa
                       return (
                         <div key={etapa} className={`flex flex-col items-center gap-0.5 ${ativo ? ETAPA_TEXT_COR[etapa] : 'text-gray-300'}`}>
                           {ETAPA_ICON[etapa]}
-                          <span className="text-xs" style={{ fontSize: '9px' }}>
-                            {ETAPA_LABEL[etapa].split('-')[0]}
+                          <span style={{ fontSize: '9px' }}>
+                            {ETAPA_LABEL[etapa].charAt(0)}
                           </span>
                         </div>
                       )
