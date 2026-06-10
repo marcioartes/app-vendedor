@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { LogOut, Users, TrendingUp, Clock, XCircle, AlertCircle, Trophy } from 'lucide-react'
 import { getProspectsComVendedores, calcularResumoVendedores } from '../services/gerente'
 import type { ProspectComVendedor, ResumoVendedor } from '../services/gerente'
+import RelatorioGerente from '../components/prospects/RelatorioGerente'
 
 function getMedalha(index: number) {
   if (index === 0) return '🥇'
@@ -113,6 +114,9 @@ export default function DashboardGerente() {
                 </div>
               </div>
             </div>
+
+            {/* Relatório com filtros */}
+            <RelatorioGerente prospects={prospects} />
 
             {/* Alertas */}
             {vendedoresComProblema.length > 0 && (
