@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react'
 import {
   Phone,
   FileText,
@@ -10,11 +11,60 @@ import {
   XCircle,
   Users,
   Activity,
+  Calendar,
 } from 'lucide-react'
 import type { Prospect, Etapa } from '../../types'
 
 interface MetricasVendedorProps {
   prospects: Prospect[]
+}
+
+type Periodo = 'hoje' | 'semanal' | 'mensal' | 'personalizado'
+
+function getIntervalo(periodo: Periodo, customInicio?: string, customFim?: string) {
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+
+  switch (periodo) {
+    case 'hoje':
+      return { inicio: hoje, fim: new Date() }
+    case 'semanal': {
+      const inicio = new Date(hoje)
+      inicio.setDate(inicio.getDate() - 6)
+      return { inicio, fim: new Date() }
+    }
+    case 'mensal': {
+      const inicio = new Date(hoje)
+      inicio.setDate(inicio.getDate() - 29)
+      return { inicio, fim: new Date() }
+    }
+    case 'personalizado': {
+      if (customInicio && customFim) {
+        return {
+          inicio: new Date(customInicio + 'T00:00:00'),
+          fim: new Date(customFim + 'T23:59:59'),
+        }
+      }
+      return { inicio: hoje, fim: new Date() }
+    }
+  }
+}
+
+function formatarPeriodoLabel(periodo: Periodo, inicio: Date, fim: Date): string {
+  const opts: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' }
+  const fmtInicio = inicio.toLocaleDateString('pt-BR', opts)
+  const fmtFim = fim.toLocaleDateString('pt-BR', opts)
+
+  switch (periodo) {
+    case 'hoje':
+      return `Hoje — ${fmtInicio}`
+    case 'semanal':
+      return `${fmtInicio} a ${fmtFim}`
+    case 'mensal':
+      return `${fmtInicio} a ${fmtFim}`
+    case 'personalizado':
+      return `${fmtInicio} a ${fmtFim}`
+  }
 }
 
 const ETAPA_CONFIG: {
@@ -36,15 +86,42 @@ const ETAPA_CONFIG: {
 // Funil visual: exclui "perdido" que é mostrado separadamente
 const FUNIL_ETAPAS = ETAPA_CONFIG.filter(e => e.key !== 'perdido')
 
+const PERIODOS: { key: Periodo; label: string }[] = [
+  { key: 'hoje', label: 'Hoje' },
+  { key: 'semanal', label: '7 dias' },
+  { key: 'mensal', label: '30 dias' },
+  { key: 'personalizado', label: 'Personalizado' },
+]
+
 export default function MetricasVendedor({ prospects }: MetricasVendedorProps) {
-  const total = prospects.length
+  const [periodo, setPeriodo] = useState<Periodo>('mensal')
+  const [customInicio, setCustomInicio] = useState('')
+  const [customFim, setCustomFim] = useState('')
+
+  const { inicio, fim } = getIntervalo(periodo, customInicio, customFim)
+  const periodoLabel = formatarPeriodoLabel(periodo, inicio, fim)
+
+  // Filtrar prospects pelo período
+  const prospectsFiltrados = useMemo(() => {
+    const inicioDate = new Date(inicio)
+    inicioDate.setHours(0, 0, 0, 0)
+    const fimDate = new Date(fim)
+    fimDate.setHours(23, 59, 59, 999)
+
+    return prospects.filter((p) => {
+      const criado = new Date(p.created_at)
+      return criado >= inicioDate && criado <= fimDate
+    })
+  }, [prospects, periodo, customInicio, customFim])
+
+  const total = prospectsFiltrados.length
   const contagem: Record<string, number> = {}
 
   ETAPA_CONFIG.forEach((e) => {
-    contagem[e.key] = prospects.filter((p) => p.etapa === e.key).length
+    contagem[e.key] = prospectsFiltrados.filter((p) => p.etapa === e.key).length
   })
 
-  const ativos = prospects.filter(
+  const ativos = prospectsFiltrados.filter(
     (p) => !['fechado', 'concluido', 'perdido'].includes(p.etapa)
   ).length
   const fechados = (contagem['fechado'] || 0) + (contagem['concluido'] || 0)
@@ -53,6 +130,58 @@ export default function MetricasVendedor({ prospects }: MetricasVendedorProps) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      {/* Filtro de período */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <Calendar size={14} className="text-gray-400" />
+          <span className="text-xs text-gray-500 font-medium">Período:</span>
+          <div className="flex gap-1 flex-wrap">
+            {PERIODOS.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => setPeriodo(p.key)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  periodo === p.key
+                    ? 'bg-blue-500 text-white shadow-sm'
+                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Campos de data personalizada */}
+        {periodo === 'personalizado' && (
+          <div className="flex flex-wrap gap-3 items-center pt-2 border-t border-gray-50">
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-500">De:</label>
+              <input
+                type="date"
+                value={customInicio}
+                onChange={(e) => setCustomInicio(e.target.value)}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-500">Até:</label>
+              <input
+                type="date"
+                value={customFim}
+                onChange={(e) => setCustomFim(e.target.value)}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Label do período ativo */}
+        <p className="text-xs text-gray-400 mt-2">
+          📅 {periodoLabel} — {total} prospect{total !== 1 ? 's' : ''} encontrado{total !== 1 ? 's' : ''}
+        </p>
+      </div>
+
       {/* Resumo geral */}
       <div>
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
