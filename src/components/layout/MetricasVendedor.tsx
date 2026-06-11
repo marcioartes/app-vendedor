@@ -21,17 +21,20 @@ const ETAPA_CONFIG: {
   key: Etapa
   label: string
   cor: string
-  bgCor: string
+  bgGradient: string
   icon: React.ReactNode
 }[] = [
-  { key: 'contato', label: 'Contato', cor: 'text-blue-500', bgCor: 'bg-blue-500', icon: <Phone size={14} /> },
-  { key: 'orcamento', label: 'Orçamento', cor: 'text-yellow-500', bgCor: 'bg-yellow-500', icon: <FileText size={14} /> },
-  { key: 'negociacao', label: 'Negociação', cor: 'text-purple-500', bgCor: 'bg-purple-500', icon: <Handshake size={14} /> },
-  { key: 'fechado', label: 'Fechado', cor: 'text-green-500', bgCor: 'bg-green-500', icon: <CheckCircle size={14} /> },
-  { key: 'pos_venda', label: 'Pós-venda', cor: 'text-teal-500', bgCor: 'bg-teal-500', icon: <RefreshCw size={14} /> },
-  { key: 'concluido', label: 'Concluído', cor: 'text-green-600', bgCor: 'bg-green-600', icon: <Flag size={14} /> },
-  { key: 'perdido', label: 'Perdido', cor: 'text-red-500', bgCor: 'bg-red-400', icon: <AlertCircle size={14} /> },
+  { key: 'contato', label: 'Contato', cor: 'text-blue-500', bgGradient: 'bg-gradient-to-r from-blue-400 to-blue-500', icon: <Phone size={14} /> },
+  { key: 'orcamento', label: 'Orçamento', cor: 'text-yellow-500', bgGradient: 'bg-gradient-to-r from-yellow-400 to-yellow-500', icon: <FileText size={14} /> },
+  { key: 'negociacao', label: 'Negociação', cor: 'text-purple-500', bgGradient: 'bg-gradient-to-r from-purple-400 to-purple-500', icon: <Handshake size={14} /> },
+  { key: 'fechado', label: 'Fechado', cor: 'text-green-500', bgGradient: 'bg-gradient-to-r from-green-400 to-green-500', icon: <CheckCircle size={14} /> },
+  { key: 'pos_venda', label: 'Pós-venda', cor: 'text-teal-500', bgGradient: 'bg-gradient-to-r from-teal-400 to-teal-500', icon: <RefreshCw size={14} /> },
+  { key: 'concluido', label: 'Concluído', cor: 'text-green-600', bgGradient: 'bg-gradient-to-r from-green-500 to-green-600', icon: <Flag size={14} /> },
+  { key: 'perdido', label: 'Perdido', cor: 'text-red-500', bgGradient: 'bg-gradient-to-r from-red-300 to-red-400', icon: <AlertCircle size={14} /> },
 ]
+
+// Funil visual: exclui "perdido" que é mostrado separadamente
+const FUNIL_ETAPAS = ETAPA_CONFIG.filter(e => e.key !== 'perdido')
 
 export default function MetricasVendedor({ prospects }: MetricasVendedorProps) {
   const total = prospects.length
@@ -47,8 +50,6 @@ export default function MetricasVendedor({ prospects }: MetricasVendedorProps) {
   const fechados = (contagem['fechado'] || 0) + (contagem['concluido'] || 0)
   const perdidos = contagem['perdido'] || 0
   const taxaConversao = total > 0 ? Math.round((fechados / total) * 100) : 0
-
-  const maxContagem = Math.max(...Object.values(contagem), 1)
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
@@ -86,29 +87,57 @@ export default function MetricasVendedor({ prospects }: MetricasVendedorProps) {
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
           Funil de Vendas
         </h2>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-4">
-          {ETAPA_CONFIG.map((etapa) => {
-            const qtd = contagem[etapa.key] || 0
-            const pct = maxContagem > 0 ? (qtd / maxContagem) * 100 : 0
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex flex-col items-center gap-1">
+            {FUNIL_ETAPAS.map((etapa, index) => {
+              const qtd = contagem[etapa.key] || 0
+              // Largura do funil: vai de 100% no topo até ~30% na base
+              const widthPct = 100 - (index * (70 / (FUNIL_ETAPAS.length - 1 || 1)))
 
-            return (
-              <div key={etapa.key}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className={etapa.cor}>{etapa.icon}</span>
-                    <span className="text-sm font-medium text-gray-700">{etapa.label}</span>
+              return (
+                <div key={etapa.key} className="w-full flex items-center gap-3">
+                  {/* Label à esquerda */}
+                  <div className="w-24 shrink-0 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className={`${etapa.cor}`}>{etapa.icon}</span>
+                      <span className="text-xs font-medium text-gray-600">{etapa.label}</span>
+                    </div>
                   </div>
-                  <span className="text-sm font-bold text-gray-900">{qtd}</span>
+
+                  {/* Barra do funil (trapézio) */}
+                  <div className="flex-1 flex justify-center">
+                    <div
+                      className={`${etapa.bgGradient} h-9 rounded-sm flex items-center justify-center transition-all duration-500`}
+                      style={{
+                        width: `${widthPct}%`,
+                        clipPath: index < FUNIL_ETAPAS.length - 1
+                          ? `polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%)`
+                          : `polygon(4% 0%, 96% 0%, 96% 100%, 4% 100%)`,
+                      }}
+                    >
+                      {qtd > 0 && (
+                        <span className="text-white text-xs font-bold drop-shadow-sm">{qtd}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Resultado à direita */}
+                  <div className="w-10 shrink-0">
+                    <span className="text-sm font-bold text-gray-900">{qtd}</span>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2.5">
-                  <div
-                    className={`h-2.5 rounded-full transition-all duration-500 ${etapa.bgCor}`}
-                    style={{ width: `${Math.max(pct, qtd > 0 ? 4 : 0)}%` }}
-                  />
-                </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+
+          {/* Perdidos (fora do funil) */}
+          {perdidos > 0 && (
+            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-center gap-2">
+              <AlertCircle size={14} className="text-red-400" />
+              <span className="text-xs text-gray-500">Perdidos:</span>
+              <span className="text-sm font-bold text-red-500">{perdidos}</span>
+            </div>
+          )}
         </div>
       </div>
 
