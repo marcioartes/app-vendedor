@@ -25,14 +25,14 @@ export default function BottomNav({ activeTab, onChangeTab }: BottomNavProps) {
               key={key}
               onClick={() => onChangeTab(key)}
               className={`flex flex-col items-center justify-center gap-0.5 w-full h-full transition-colors relative ${
-                isActive ? 'text-blue-600' : 'text-gray-400'
+                isActive ? 'text-blue-600' : 'text-gray-600'
               }`}
             >
               {isActive && (
                 <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-600 rounded-full" />
               )}
               <Icon size={22} strokeWidth={isActive ? 2.2 : 1.8} />
-              <span className={`text-[10px] font-medium ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
+              <span className={`text-[11px] font-medium ${isActive ? 'text-blue-600' : 'text-gray-600'}`}>
                 {label}
               </span>
             </button>
