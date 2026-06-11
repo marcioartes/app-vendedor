@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (mounted) {
             setPerfil(null)
             setLoading(false)
-            window.location.href = '/login'
+            window.location.replace('/login')
           }
         }
       }
@@ -74,7 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function signOut() {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+    } catch (err) {
+      console.error(err)
+      window.location.replace('/login')
+    }
   }
 
   return (
