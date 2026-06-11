@@ -40,25 +40,25 @@ const ETAPA_LABEL: Record<Etapa, string> = {
 }
 
 const ETAPA_TEXT_COR: Record<Etapa, string> = {
-  contato:    'text-blue-500',
-  orcamento:  'text-yellow-500',
-  negociacao: 'text-purple-500',
-  fechado:    'text-green-500',
-  pos_venda:  'text-teal-500',
-  concluido:  'text-green-600',
-  perdido:    'text-red-500',
+  contato:    'text-blue-600',
+  orcamento:  'text-yellow-600',
+  negociacao: 'text-purple-600',
+  fechado:    'text-green-600',
+  pos_venda:  'text-teal-600',
+  concluido:  'text-green-700',
+  perdido:    'text-red-600',
 }
 
 const ETAPAS_FUNIL: Etapa[] = ['contato', 'orcamento', 'negociacao', 'fechado', 'pos_venda', 'concluido']
 
 const ETAPA_ICON: Record<Etapa, React.ReactNode> = {
-  contato:    <Phone size={11} />,
-  orcamento:  <FileText size={11} />,
-  negociacao: <Handshake size={11} />,
-  fechado:    <CheckCircle size={11} />,
-  pos_venda:  <RefreshCw size={11} />,
-  concluido:  <Flag size={11} />,
-  perdido:    <AlertCircle size={11} />,
+  contato:    <Phone size={12} />,
+  orcamento:  <FileText size={12} />,
+  negociacao: <Handshake size={12} />,
+  fechado:    <CheckCircle size={12} />,
+  pos_venda:  <RefreshCw size={12} />,
+  concluido:  <Flag size={12} />,
+  perdido:    <AlertCircle size={12} />,
 }
 
 const MARCACOES = [15, 35, 55, 75, 90]
@@ -84,9 +84,6 @@ export default function MetaDia({ prospects, onNovo, onAbrir }: MetaDiaProps) {
 
   const total = prospectosDoDia.length
   const metaBatida = total >= META_MINIMA
-
-  // Sempre mostra os prospectos + 1 slot vazio no final
-  // Mínimo de META_MINIMA slots
   const totalSlots = Math.max(META_MINIMA, total + 1)
   const slots = Array.from({ length: totalSlots })
 
@@ -96,8 +93,8 @@ export default function MetaDia({ prospects, onNovo, onAbrir }: MetaDiaProps) {
 
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Meta do Dia</p>
-            <p className={`text-sm font-semibold mt-0.5 ${metaBatida ? 'text-green-600' : 'text-gray-700'}`}>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Meta do Dia</p>
+            <p className={`text-sm font-semibold mt-0.5 ${metaBatida ? 'text-green-600' : 'text-gray-800'}`}>
               {metaBatida
                 ? `Meta batida! ${total} prospectos hoje 🎉`
                 : `${total} de ${META_MINIMA} prospectos`}
@@ -125,43 +122,43 @@ export default function MetaDia({ prospects, onNovo, onAbrir }: MetaDiaProps) {
                       {(urgente || perdido) && (
                         <AlertCircle size={14} className="text-red-500 shrink-0" />
                       )}
-                      <span className="text-sm font-medium text-gray-800 truncate">
+                      <span className="text-sm font-semibold text-gray-900 truncate">
                         {i + 1}. {prospect.nome_prospecto}
                       </span>
                     </div>
-                    <span className={`text-xs font-medium ml-2 shrink-0 flex items-center gap-1 ${perdido ? 'text-red-500' : ETAPA_TEXT_COR[prospect.etapa]}`}>
+                    <span className={`text-xs font-semibold ml-2 shrink-0 flex items-center gap-1 ${perdido ? 'text-red-600' : ETAPA_TEXT_COR[prospect.etapa]}`}>
                       {ETAPA_ICON[prospect.etapa]}
                       {ETAPA_LABEL[prospect.etapa]}
                     </span>
                   </div>
 
                   {retornoInfo && (
-                    <p className={`text-xs mb-1.5 ${urgente ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                    <p className={`text-xs mb-1.5 font-medium ${urgente ? 'text-red-600' : 'text-gray-500'}`}>
                       {retornoInfo.label}
                     </p>
                   )}
 
-                  <div className="relative w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div className="relative w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                     <div
-                      className={`h-2 rounded-full transition-all ${cor}`}
+                      className={`h-2.5 rounded-full transition-all ${cor}`}
                       style={{ width: `${pct}%` }}
                     />
                     {MARCACOES.map((pos) => (
                       <div
                         key={pos}
-                        className="absolute top-0 bottom-0 w-px bg-white opacity-40"
+                        className="absolute top-0 bottom-0 w-px bg-white opacity-50"
                         style={{ left: `${pos}%` }}
                       />
                     ))}
                   </div>
 
-                  <div className="flex justify-between mt-1.5">
+                  <div className="flex justify-between mt-2">
                     {ETAPAS_FUNIL.map((etapa) => {
                       const ativo = prospect.etapa === etapa
                       return (
-                        <div key={etapa} className={`flex flex-col items-center gap-0.5 ${ativo ? ETAPA_TEXT_COR[etapa] : 'text-gray-300'}`}>
+                        <div key={etapa} className={`flex flex-col items-center gap-0.5 ${ativo ? ETAPA_TEXT_COR[etapa] : 'text-gray-400'}`}>
                           {ETAPA_ICON[etapa]}
-                          <span style={{ fontSize: '9px' }}>
+                          <span className="text-xs" style={{ fontSize: '10px' }}>
                             {ETAPA_LABEL[etapa].charAt(0)}
                           </span>
                         </div>
@@ -175,13 +172,13 @@ export default function MetaDia({ prospects, onNovo, onAbrir }: MetaDiaProps) {
             return (
               <button key={i} onClick={onNovo} className="w-full text-left group">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-400">{i + 1}. —</span>
-                  <span className="flex items-center gap-1 text-xs font-semibold text-blue-500 group-hover:text-blue-700 transition-colors">
+                  <span className="text-sm font-medium text-gray-500">{i + 1}. —</span>
+                  <span className="flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">
                     <Plus size={12} />
                     Iniciar prospecção
                   </span>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2 group-hover:bg-blue-50 transition-colors" />
+                <div className="w-full bg-gray-200 rounded-full h-2.5 group-hover:bg-blue-100 transition-colors" />
               </button>
             )
           })}

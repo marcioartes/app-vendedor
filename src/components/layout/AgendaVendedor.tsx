@@ -108,7 +108,7 @@ export default function AgendaVendedor({ prospects, onAbrir }: AgendaVendedorPro
     {
       titulo: `Futuros (${futuros.length})`,
       icon: <CalendarClock size={16} />,
-      cor: 'text-gray-400',
+      cor: 'text-gray-600',
       prospects: futuros,
     },
   ]
@@ -118,10 +118,10 @@ export default function AgendaVendedor({ prospects, onAbrir }: AgendaVendedorPro
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+        <h2 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
           Agenda de Retornos
         </h2>
-        <span className="text-xs text-gray-400">{totalRetornos} retorno{totalRetornos !== 1 ? 's' : ''}</span>
+        <span className="text-xs text-gray-600">{totalRetornos} retorno{totalRetornos !== 1 ? 's' : ''}</span>
       </div>
 
       {/* Banner de atrasados */}
@@ -162,14 +162,14 @@ export default function AgendaVendedor({ prospects, onAbrir }: AgendaVendedorPro
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">{p.telefone}</p>
                       {p.observacoes && (
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">{p.observacoes}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">{p.observacoes}</p>
                       )}
                     </div>
                     <div className="text-right ml-3 shrink-0 space-y-1">
                       <span className={`block text-xs font-medium px-2 py-0.5 rounded-lg ${badge.bg} ${badge.text}`}>
                         {ETAPA_LABEL[p.etapa]}
                       </span>
-                      <p className={`text-xs ${isAtrasado ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                      <p className={`text-xs font-medium ${isAtrasado ? 'text-red-500' : 'text-gray-600'}`}>
                         {retorno.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                       </p>
                     </div>
@@ -184,8 +184,8 @@ export default function AgendaVendedor({ prospects, onAbrir }: AgendaVendedorPro
       {totalRetornos === 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
           <CalendarCheck size={32} className="text-gray-200 mx-auto mb-3" />
-          <p className="text-sm text-gray-400">Nenhum retorno agendado</p>
-          <p className="text-xs text-gray-300 mt-1">Crie prospects para ver sua agenda</p>
+          <p className="text-sm text-gray-600">Nenhum retorno agendado</p>
+          <p className="text-xs text-gray-500 mt-1">Crie prospects para ver sua agenda</p>
         </div>
       )}
     </div>
